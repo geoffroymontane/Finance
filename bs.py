@@ -25,15 +25,13 @@ def bs_call_price_derivative(S_0, T, K, r, sigma):
     n1_derivative = math.exp(-0.5 * d1 ** 2) / math.sqrt(2 * math.pi)
     n2_derivative = math.exp(-0.5 * d2 ** 2) / math.sqrt(2 * math.pi)
 
-    return S_0 * n1_derivative * d1_derivative - K * math.exp(-r * T) * n2_derivative * d2_derivative 
-
-
+    return (S_0 * n1_derivative * d1_derivative - K * math.exp(-r * T)
+           * n2_derivative * d2_derivative)
 
 
 def implied_vol_call(S_0, T, K, r, premium, start, precision):
 
     sigma = start
-
     error = bs_call_price(S_0, T, K, r, sigma) - premium
    
     while error > precision:
@@ -45,6 +43,3 @@ def implied_vol_call(S_0, T, K, r, premium, start, precision):
     return sigma
 
 
-sigma = implied_vol_call(31.55, 3.5, 22.75, 0.05, 13, 0.5, 0.001)
-print(sigma)
-print(bs_call_price(31.55, 3.5, 22.75, 0.05, sigma))
