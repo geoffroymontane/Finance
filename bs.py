@@ -4,7 +4,7 @@ import math
 
 
 
-def bs(S_0, T, K, r, sigma):
+def bs_call_price(S_0, T, K, r, sigma):
 
     d_1 = ((math.log(S_0 / K) + T * (r + 0.5 * sigma ** 2))
           / (sigma * math.sqrt(T)))
