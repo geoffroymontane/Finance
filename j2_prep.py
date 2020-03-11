@@ -13,5 +13,11 @@ def cov_N():
 		temp = pd.read_csv(path + filename)
 		data[filename[:3]] = (temp[filename[:3] + "~high"] + temp[filename[:3] + "~low"])/2
 
-	return data.cov,N
-       
+	return data.cov(),N
+
+
+
+data,N = cov_N()
+
+print(data)
+
