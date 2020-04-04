@@ -71,6 +71,11 @@ def nelder_mead_simplex(Cov, precision):
     global_Cov = Cov
     W = minimize(f_, W, method='nelder-mead', 
                    options={'xatol': precision, 'disp': True}).x
+
+    max_W = max(W)
+    for i in range(len(W)):
+        W[i] /= abs(max_W)
+
     ref = []
     for k in range(N):
         a = 0
@@ -86,6 +91,7 @@ def nelder_mead_simplex(Cov, precision):
 
         ref.append(a / b)
 
+
     return W, compute_risk_contributions(Cov, W), ref, f(Cov, W) 
 
 
@@ -98,6 +104,11 @@ def bfgs_method(Cov):
     W = [1 / N for i in range(N)]
     W = minimize(f_, W, method='BFGS', 
                    options={'disp': True}).x
+
+    max_W = max(W)
+    for i in range(len(W)):
+        W[i] /= abs(max_W)
+
     ref = []
     for k in range(N):
         a = 0
@@ -141,11 +152,10 @@ def coordinate_descent_monte_carlo(Cov, precision):
                     W[index] = y
         print(error)
 
-    s = 0
+
+    max_W = max(W)
     for i in range(len(W)):
-        s += W[i] 
-    for i in range(len(W)):
-        W[i] /= s
+        W[i] /= abs(max_W)
 
 
     ref = []

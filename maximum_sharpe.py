@@ -84,9 +84,7 @@ def coordinate_descent_monte_carlo(Cov, E, iterations):
 
     s = 0
     for i in range(len(W)):
-        s += W[i] 
-    for i in range(len(W)):
-        W[i] /= s
+        W[i] /= abs(max(W))
 
     return W, compute_sharpe_ratio(Cov, E, W)
 
@@ -104,11 +102,9 @@ def nelder_mead_simplex(Cov, E):
                    options={'disp': True}).x
 
 
-    s = 0
+    max_W = max(W)
     for i in range(len(W)):
-        s += W[i] 
-    for i in range(len(W)):
-        W[i] /= abs(s)
+        W[i] /= abs(max_W)
 
     return W, compute_sharpe_ratio(Cov, E, W) 
 
@@ -125,12 +121,9 @@ def bfgs_method(Cov, E):
     W = minimize(sharpe_ratio_, W, method='BFGS', 
                    options={'disp': True}).x
 
-
-    s = 0
+    max_W = max(W)
     for i in range(len(W)):
-        s += W[i] 
-    for i in range(len(W)):
-        W[i] /= abs(s)
+        W[i] /= abs(max_W)
 
     return W, compute_sharpe_ratio(Cov, E, W) 
 
@@ -140,8 +133,8 @@ Cov, E = cov_rend_moy_N()
 print("SIMPLEX")
 print("--------------------")
 initial = datetime.now()
-#W, sharpe_ratio = nelder_mead_simplex(Cov, E)
-W, sharpe_ratio = coordinate_descent_monte_carlo(Cov, E, 20)
+W, sharpe_ratio = nelder_mead_simplex(Cov, E)
+#W, sharpe_ratio = coordinate_descent_monte_carlo(Cov, E, 20)
 duration = datetime.now() - initial
 print("Time:")
 print(duration)
