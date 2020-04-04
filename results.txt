@@ -1,0 +1,9 @@
+Risk Parity: Cov realised: BFGS: 111ms: Erreur 3.42e-12
+Risk Parity: Cov realised: SIMPLEX: 556ms: Erreur 6.56e-9
+Risk Parity: Cov realised: Monte carlo coordinate descent: 44.84s: Erreur 1e-2
+
+Maximum Sharpe: Cov realised: SIMPLEX: 4.6s: Sharpe ratio 0.107
+Maximum Sharpe: Cov realised: BFGS: 2.33s: Sharpe ratio 0.164
+Maximum Sharpe: Cov realised: Monte carlo coordinate descent: 1min: Sharpe ratio 0.054
+
+

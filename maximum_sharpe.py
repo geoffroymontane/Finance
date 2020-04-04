@@ -2,7 +2,11 @@ import random
 import pandas as pd
 import os
 import numpy as np
+from datetime import datetime
+from scipy.optimize import minimize
 
+global_Cov = np.array([])
+global_E = np.array([])
 
 def cov_rend_moy_N():
 
@@ -28,7 +32,7 @@ def cov_rend_moy_N():
 	return res.cov(),res.mean()
 
 
-def sharpe_ratio(Cov, E, W):
+def compute_sharpe_ratio(Cov, E, W):
 
     n = 0
     d = 0
@@ -44,14 +48,19 @@ def sharpe_ratio(Cov, E, W):
 
     return n / d
 
+def sharpe_ratio_(W):
 
+    global global_E
+    global global_Cov
+
+    return -compute_sharpe_ratio(global_Cov, global_E, W)
 
 def coordinate_descent_monte_carlo(Cov, E, iterations):
 
     N = len(E)
     W = [1 / N for i in range(N)]
 
-    ratio = sharpe_ratio(Cov, E, W)
+    ratio = compute_sharpe_ratio(Cov, E, W)
 
     for k in range(iterations):
         
@@ -66,17 +75,95 @@ def coordinate_descent_monte_carlo(Cov, E, iterations):
                 y = random.random()
                 W_test[index] = y
 
-                new_ratio = sharpe_ratio(Cov, E, W_test)
+                new_ratio = compute_sharpe_ratio(Cov, E, W_test)
                 if new_ratio > ratio:
                     W[index] = y
                     ratio = new_ratio
         
         print(ratio)
 
-    return W, sharpe_ratio(Cov, E, W)
+    s = 0
+    for i in range(len(W)):
+        s += W[i] 
+    for i in range(len(W)):
+        W[i] /= s
+
+    return W, compute_sharpe_ratio(Cov, E, W)
+
+
+def nelder_mead_simplex(Cov, E):
+
+    global global_Cov
+    global global_E
+    global_Cov = Cov
+    global_E = E 
+
+    N = len(Cov)
+    W = [1 / N for i in range(N)]
+    W = minimize(sharpe_ratio_, W, method='nelder-mead', 
+                   options={'disp': True}).x
+
+
+    s = 0
+    for i in range(len(W)):
+        s += W[i] 
+    for i in range(len(W)):
+        W[i] /= abs(s)
+
+    return W, compute_sharpe_ratio(Cov, E, W) 
+
+
+def bfgs_method(Cov, E):
+    
+    global global_Cov
+    global global_E
+    global_Cov = Cov
+    global_E = E 
+
+    N = len(Cov)
+    W = [1 / N for i in range(N)]
+    W = minimize(sharpe_ratio_, W, method='BFGS', 
+                   options={'disp': True}).x
+
+
+    s = 0
+    for i in range(len(W)):
+        s += W[i] 
+    for i in range(len(W)):
+        W[i] /= abs(s)
+
+    return W, compute_sharpe_ratio(Cov, E, W) 
 
 
 Cov, E = cov_rend_moy_N()
-W, sharpe_ratio = coordinate_descent_monte_carlo(Cov, E, 100)
 
-print(W, sharpe_ratio)
+print("SIMPLEX")
+print("--------------------")
+initial = datetime.now()
+#W, sharpe_ratio = nelder_mead_simplex(Cov, E)
+W, sharpe_ratio = coordinate_descent_monte_carlo(Cov, E, 20)
+duration = datetime.now() - initial
+print("Time:")
+print(duration)
+print("Poids obtenus :")
+print(W)
+print("Ratio :")
+print(sharpe_ratio)
+
+print("")
+print("")
+
+print("BFGS")
+print("--------------------")
+initial = datetime.now()
+W, sharpe_ratio = bfgs_method(Cov, E)
+duration = datetime.now() - initial
+print("Time:")
+print(duration)
+print("Poids obtenus :")
+print(W)
+print("Ratio :")
+print(sharpe_ratio)
+
+print("")
+print("")
