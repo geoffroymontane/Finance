@@ -1,9 +1,42 @@
-Risk Parity: Cov realised: BFGS: 111ms: Erreur 3.42e-12
-Risk Parity: Cov realised: SIMPLEX: 556ms: Erreur 6.56e-9
-Risk Parity: Cov realised: Monte carlo coordinate descent: 44.84s: Erreur 1e-2
+Actifs = [EEM, EFA, EWJ, USO, IWN, SPY]
 
-Maximum Sharpe: Cov realised: SIMPLEX: 4.6s: Sharpe ratio 0.107
-Maximum Sharpe: Cov realised: BFGS: 2.33s: Sharpe ratio 0.164
-Maximum Sharpe: Cov realised: Monte carlo coordinate descent: 1min: Sharpe ratio 0.054
+
+I] Test de rapidité de la convergence des algos
+
+Risk Parity: Cov realised: BFGS: 10ms: Erreur 1.65e-13
+Risk Parity: Cov realised: SIMPLEX: 20ms: Erreur 9.47e-9
+Risk Parity: Cov realised: Monte carlo coordinate descent: 162ms: Erreur 1e-2
+
+On choisit donc BFGS pour la suite
+
+Maximum Sharpe: Cov realised: SIMPLEX: 4.6s: Sharpe ratio 0.083
+Maximum Sharpe: Cov realised: BFGS: 2.33s: Sharpe ratio 0.083
+Maximum Sharpe: Cov realised: Monte carlo coordinate descent: 5s: Sharpe ratio 0.038
+
+On choisit aussi BFGS
+
+
+
+II] Performance de trading des méthodes
+
+Méthodologie : on sépare l'échantillon en deux. Les premières valeurs sont
+considérées connues et les dernières valeurs inconnues. Ainsi, on peut
+tester l'efficacité de l'allocation de portefeuille sans connaître la suite.
+
+Risk Parity: Cov realised: +70% entre 21/02/2013 et 31/12/1019
+Maximum Sharpe Ratio: Cov realised: +187% entre 21/02/2013 et 31/12/1019
+
+
+
+III] Ajout de l'IV
+
+On moyenne les IV sur la période considérée connue et on rectifie la
+covariance de la façon suivante :
+
+cov_new(i)(j) = iv(i) * iv(j) * cov(i)(j) / sqrt(var(i) * var(j))
+
+Risk Parity: IV: +134% entre 21/02/2013 et 31/12/1019
+
+Conclusion: c'est mieux avec l'IV
 
 
