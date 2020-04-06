@@ -6,21 +6,117 @@ from scipy.optimize import minimize
 from datetime import datetime
 
 global_Cov = np.array([])
+global_test = []
+global_names = []
+global_test_begin = ""
+global_test_end = ""
 
 def cov_N():
 
-	N = 0
+    global global_test
+    global global_names
+    global global_test_begin
+    global global_test_end
 
-	data = pd.DataFrame()
-	path = "data_bourse/"
+    data = {}
+    data_iv = {}
+    data_df = pd.DataFrame()
 
-	for filename in os.listdir(path):
-		temp = pd.read_csv(path + filename)
-		data[filename[:3]] = ((temp[filename[:3] + "~high"]
-                             + temp[filename[:3] + "~low"]) / 2)
+    path = "data_bourse/"
+    path_iv = "data_bourse_iv/"
 
-	return np.array(data.cov())
+    sizes = []
 
+    # Sous-jacent
+    for filename in os.listdir(path):
+        temp = pd.read_csv(path + filename)
+
+        for i in range(temp.shape[0]):
+            date = temp.loc[i, "date"] 
+
+            if date in data:
+                data[date][filename[:3]] = ((temp.loc[i, filename[:3] + "~high"]
+                             + temp.loc[i, filename[:3] + "~low"]) / 2)
+            else:
+                data[date] = {}
+                data[date][filename[:3]] = ((temp.loc[i, filename[:3] + "~high"]
+                             + temp.loc[i, filename[:3] + "~low"]) / 2)
+
+    # IV
+    for filename in os.listdir(path_iv):
+        temp = pd.read_csv(path_iv + filename)
+
+        for i in range(temp.shape[0]):
+            date = temp.loc[i, "date"] 
+
+            if date in data_iv:
+                data_iv[date][filename[:3]] = temp.loc[i, "level_W2"]
+            else:
+                data_iv[date] = {}
+                data_iv[date][filename[:3]] = temp.loc[i, "level_W2"]
+
+        
+    # Nettoyage des données
+    global_names = ["EEM", "EFA", "EWJ", "USO", "IWM", "SPY"] 
+    for date in data:
+        for t in global_names:
+            if t not in data[date]:
+                data[date] = None
+                break
+    data_keys = sorted(list(data.keys()))
+    for i in reversed(range(len(data_keys))):
+        if data[data_keys[i]] == None:
+            data_keys.pop(i)
+
+
+    data_df = pd.DataFrame(columns = global_names)
+
+    # data_df est l'échantillon d'apprentissage
+    for i in range(len(data_keys) // 2):
+
+        temp = []
+        for e in global_names:
+            temp.append(data[data_keys[i]][e])
+        data_df.loc[i] = temp
+
+
+    # calculer les iv moyens sur l'échantillon d'apprentissage
+    iv = [0 for i in range(len(global_names))]
+    iv_deno = [0 for i in range(len(global_names))]
+    data_iv_keys = sorted(list(data_iv.keys()))
+    for i in range(len(data_iv_keys)):
+        if data_iv_keys[i] > data_keys[len(data_keys) // 2 - 1]:
+            break
+        for n in range(len(global_names)):
+            if global_names[n] in data_iv[data_iv_keys[i]]:
+                iv[n] += data_iv[data_iv_keys[i]][global_names[n]]
+                iv_deno[n] += 1
+
+    cov = np.array(data_df.cov())
+    for i in range(len(iv)):
+        if iv_deno[i] == 0:
+            iv[i] = cov[i][i] ** 0.5
+        else:
+            iv[i] /= iv_deno[i]
+
+    # global_test est l'échantillon de test
+    global_test_begin = data_keys[len(data_keys) // 2]
+    global_test_end = data_keys[len(data_keys) - 1]
+    for i in range(len(data_keys) // 2, len(data_keys)):
+        temp = []
+        for e in global_names:
+            temp.append(data[data_keys[i]][e])
+        global_test.append(temp)
+
+
+
+    # IV
+    cov_iv = np.copy(cov)
+    for i in range(len(cov)):
+        for j in range(len(cov)):
+            cov_iv[i][j] = iv[i] * iv[j] * cov[i][j] / (cov[i][i] * cov[j][j]) ** 0.5
+
+    return cov, cov_iv
 
 def f(Cov, W):
 
@@ -203,7 +299,23 @@ def check_risk_parity(Cov, W):
     return "Error : " + str(e / m * 100) + "%"
 
 
-Cov = cov_N()
+def test_portofolio(W):
+
+    print("Début " + str(global_test_begin))
+
+    initial = 0
+    for i in range(len(W)):
+        initial += W[i] * global_test[0][i]
+    
+    final = 0
+    for i in range(len(W)):
+        final += W[i] * global_test[len(global_test) - 1][i]
+
+    print(str((final - initial) / initial * 100) + "%")
+    print("Fin " + str(global_test_end))
+
+
+Cov, Cov_iv = cov_N()
 
 print("SIMPLEX")
 print("--------------------")
@@ -214,6 +326,7 @@ duration = datetime.now() - initial
 print("Time:")
 print(duration)
 print("Poids obtenus :")
+print(global_names)
 print(W)
 print("Objectif :")
 print(ref)
@@ -225,7 +338,7 @@ print(error)
 print("")
 print("")
 
-print("BFGS")
+print("BFGS Realised cov")
 print("--------------------")
 initial = datetime.now()
 W, risk_contributions, ref, error = bfgs_method(Cov)
@@ -233,6 +346,7 @@ duration = datetime.now() - initial
 print("Time:")
 print(duration)
 print("Poids obtenus :")
+print(global_names)
 print(W)
 print("Objectif :")
 print(ref)
@@ -240,7 +354,29 @@ print("Risk contributions :")
 print(risk_contributions)
 print("Erreur :")
 print(error)
+print("PERFORMANCE")
+print("--------------------")
+test_portofolio(W)
 
 print("")
 print("")
 
+print("BFGS IV")
+print("--------------------")
+initial = datetime.now()
+W, risk_contributions, ref, error = bfgs_method(Cov_iv)
+duration = datetime.now() - initial
+print("Time:")
+print(duration)
+print("Poids obtenus :")
+print(global_names)
+print(W)
+print("Objectif :")
+print(ref)
+print("Risk contributions :")
+print(risk_contributions)
+print("Erreur :")
+print(error)
+print("PERFORMANCE")
+print("--------------------")
+test_portofolio(W)
